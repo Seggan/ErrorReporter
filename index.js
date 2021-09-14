@@ -7,30 +7,29 @@ addEventListener('fetch', event => {
 
 
 async function handleRequest(request) {
-  if (request.method === "POST") {
+  if (request.method === 'POST') {
     return await doStuff(request);
   } else {
-    return new Response("Expected POST", { status: 400 });
+    return new Response('Expected POST', { status: 400 });
   }
 }
 
 async function doStuff(request) {
   const obj = await request.json();
-  const token = await DATA.get('gh_token');
   const headers = {
-    'User-Agent': "Mozilla/5.0 ErrorReporter (github.com/Seggan/ErrorReporter)",
+    'User-Agent': 'Mozilla/5.0 ErrorReporter (github.com/Seggan/ErrorReporter)',
     Accept: 'application/vnd.github.v3.raw+json',
-    Authorization: "token " + token
+    Authorization: `token ${await DATA.get('gh_token')}`
   };
 
-  if (!('Hashcode' in obj)) {
-    return new Response({ message: 'Hashcode not specified' }, { status: 400 });
+  if (!obj.Hashcode) {
+    return new Response('Hashcode not specified', { status: 400 });
   }
 
   let b = '';
   for (const key in obj) {
-    b += '# ' + key + '\n';
-    b += obj[key] + '\n';
+    b += `# ${key}
+    ${obj[key]}\n`;
   }
 
   const urlstr = `${GITHUB}/repos/${request.headers.get('User')}/${request.headers.get('Repo')}/issues`;
@@ -41,23 +40,24 @@ async function doStuff(request) {
     creator: 'SegganBot'
   }).toString();
 
-  let response = await fetch(url, {
+  const issuesResponse = await fetch(url, {
     method: 'GET',
     headers: headers
   });
-  if (response.status === 404) {
-    return new Response("User/Repo not found", { status: 404 });
+  if (issuesResponse.status === 404) {
+    return new Response('User/Repo not found', { status: 404 });
   }
-  const issues = await response.json();
+  const issues = await issuesResponse.json();
 
-  const look = '# Hashcode\n' + obj.Hashcode + '\n';
+  const look = `# Hashcode
+  ${obj.Hashcode}\n`;
   for (const issue of issues) {
     if (!('pull_request' in issue) && issue.title === TITLE && issue.body.includes(look)) {
       return new Response('Duplicate Issue');
     }
   }
 
-  response = await fetch(urlstr, {
+  const response = await fetch(urlstr, {
     method: 'POST',
     headers: headers,
     body: JSON.stringify({
@@ -67,7 +67,7 @@ async function doStuff(request) {
   });
 
   if (response.status === 400) {
-      return new Response("Server error", { status: 500 });
+    return new Response('Server error', { status: 500 });
   }
 
   return new Response(await response.text(), { status: response.status });

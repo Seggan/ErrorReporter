@@ -9,8 +9,5 @@
     "format": "prettier --write '**/*.{js,css,json,md}'"
   },
   "author": "Seggan <segganew@gmail.com>",
-  "license": "GNU GPLv3",
-  "devDependencies": {
-    "prettier": "^1.18.2"
-  }
+  "license": "GNU GPLv3"
 }
